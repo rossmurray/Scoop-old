@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using Newtonsoft.Json;
 
 namespace Scoop
 {
@@ -10,8 +11,8 @@ namespace Scoop
 	{
 		public T Read(string configFile)
 		{
-			Console.WriteLine("reading..");
-			return Json.Deserialize<T>(File.ReadAllText(configFile));
+			var json = File.ReadAllText(configFile);
+			return Json.Deserialize<T>(json);
 		}
 	}
 }

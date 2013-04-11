@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Threading;
 
 namespace Scoop
 {
@@ -58,6 +59,10 @@ namespace Scoop
 			lock (startStopLock)
 			{
 				if (!running || disposed || IsDoubleFire()) { return; }
+				/*reason to sleep briefly:
+				 * when the first event triggers for a change, the file is still being written to. trying to read from it immediately will cause an IOException.
+				*/
+				Thread.Sleep(200);
 				if (File.Exists(e.FullPath))
 				{
 					var changed = File.GetLastWriteTimeUtc(e.FullPath);
