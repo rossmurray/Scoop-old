@@ -11,9 +11,10 @@ namespace Scoop
 		private FileSystemWatcher fileWatcher;
 		private bool running;
 		private object startStopLock;
-		private Action<FileInfo> notifyHandle;
+		private Action notifyHandle;
 		private bool disposed;
 		private DateTime configLastChanged;
+		private DateTime lastEventTriggered;
 
 		public ConfigFileWatcher()
 		{
@@ -21,7 +22,7 @@ namespace Scoop
 			this.startStopLock = new object();
 		}
 
-		public void Start(FileInfo file, Action<FileInfo> notifyHandle)
+		public void Start(FileInfo file, Action notifyHandle)
 		{
 			lock(startStopLock)
 			{
@@ -56,17 +57,29 @@ namespace Scoop
 		{
 			lock (startStopLock)
 			{
-				if (!running || disposed) { return; }
+				if (!running || disposed || IsDoubleFire()) { return; }
 				if (File.Exists(e.FullPath))
 				{
 					var changed = File.GetLastWriteTimeUtc(e.FullPath);
 					if (changed > this.configLastChanged)
 					{
 						this.configLastChanged = changed;
-						this.notifyHandle(new FileInfo(e.FullPath));
+						this.notifyHandle();
 					}
 				}
 			}
+		}
+
+		private bool IsDoubleFire()
+		{
+			var result = true;
+			var now = DateTime.UtcNow;
+			if (now - lastEventTriggered > TimeSpan.FromMilliseconds(500.0))
+			{
+				result = false;
+			}
+			lastEventTriggered = now;
+			return result;
 		}
 
 		public void Dispose()
